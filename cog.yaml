@@ -3,12 +3,29 @@
 
 build:
   # set to true if your model requires a GPU
-  gpu: false
+  gpu: true
 
   # a list of ubuntu apt packages to install
-  # system_packages:
-  #   - "libgl1-mesa-glx"
-  #   - "libglib2.0-0"
+  system_packages:
+    - git
+    - git-lfs
+    - wget
+    - curl
+    - build-essential
+    - libssl-dev
+    - zlib1g-dev
+    - libbz2-dev
+    - libreadline-dev
+    - libsqlite3-dev
+    - libncursesw5-dev
+    - xz-utils
+    - tk-dev
+    - libxml2-dev
+    - libxmlsec1-dev
+    - libffi-dev
+    - liblzma-dev
+    - ffmpeg
+    - libsndfile-dev
 
   # python version in the form '3.11' or '3.11.4'
   python_version: "3.11"
@@ -19,10 +36,13 @@ build:
   #   - "torch==1.8.0"
   #   - "torchvision==0.9.0"
 
-  # commands run after the environment is setup
-  # run:
-  #   - "echo env is ready!"
-  #   - "echo another command if needed"
+  run:
+    - "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && rm -f Miniconda3-latest-Linux-x86_64.sh"
+    - "echo 'export HOME=/home/user PATH=/opt/miniconda3/bin:/home/user/.local/bin:$PATH CONDA_PREFIX=/opt/miniconda3/envs' > ~/.bashrc"
+    - "mkdir /deps"
+    - "wget https://github.com/datakami-models/WavJourney/blob/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/WavJourney.yml && mv WavJourney.yml /deps"
+    - "wget https://github.com/datakami-models/WavJourney/blob/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/Bark.yml && mv Bark.yml /deps"
+    - "wget https://github.com/datakami-models/WavJourney/blob/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/AudioCraft.yml && mv AudioCraft.yml /deps"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
