@@ -35,7 +35,7 @@ build:
     - "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && rm -f Miniconda3-latest-Linux-x86_64.sh"
     - "echo 'export HOME=/home/user PATH=/opt/miniconda3/bin:/home/user/.local/bin:$PATH CONDA_PREFIX=/opt/miniconda3/envs' >> ~/.bashrc"
     - "mkdir /deps"
-    
+
     # Install package deps. 
     - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/WavJourney.yml && mv WavJourney.yml /deps"
     - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/Bark.yml && mv Bark.yml /deps"
@@ -54,6 +54,9 @@ build:
     - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/config.yaml"
     - "mv config.yaml /src"
     - "cd /src && /opt/miniconda3/bin/conda run --live-stream -n WavJourney python cog_setup/download_tta_ttm_sr_vp.py"
+
+    # Install the replicate package in conda so Llama2 can be used
+    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U replicate"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"

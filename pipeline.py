@@ -25,6 +25,13 @@ if USE_OPENAI_CACHE:
         with open(cache_file, 'rb') as file:
             openai_cache.append(pickle.load(file))
 
+
+def chat(prompt, api_key, model_name):
+    if model_name == "llama2":
+        return chat_with_llama2(prompt, api_key)
+    return chat_with_gpt(prompt, api_key)
+
+
 def chat_with_gpt(prompt, api_key):
     if USE_OPENAI_CACHE:
         filtered_object = list(filter(lambda x: x['prompt'] == prompt, openai_cache))
@@ -59,8 +66,26 @@ def chat_with_gpt(prompt, api_key):
         with open(f'cache/{time.time()}.pkl', 'wb') as _openai_cache:
             pickle.dump(cache_obj, _openai_cache)
             openai_cache.append(cache_obj)
-
+    
     return chat['choices'][0]['message']['content']
+
+
+def chat_with_llama2(prompt, api_key):
+    import replicate
+    output = replicate.run(
+        "meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3",
+        input={
+            "debug": False,
+            "top_k": 50,
+            "top_p": 1,
+            "prompt": prompt,
+            "temperature": 0.5,
+            "system_prompt": "",
+            "max_new_tokens": 999,
+            "min_new_tokens": -1
+        }
+    )
+    return output
 
 
 def get_file_content(filename):
@@ -124,10 +149,10 @@ def init_session(session_id=''):
     return session_id
 
 @retry(stop_max_attempt_number=3)
-def input_text_to_json_script_with_retry(complete_prompt_path, api_key):
+def input_text_to_json_script_with_retry(complete_prompt_path, api_key, model_name):
     print("    trying ...")
     complete_prompt = get_file_content(complete_prompt_path)
-    json_response = try_extract_content_from_quotes(chat_with_gpt(complete_prompt, api_key))
+    json_response = try_extract_content_from_quotes(chat(complete_prompt, api_key, model_name))
     json_data = json5.loads(json_response)
 
     try:
@@ -142,26 +167,26 @@ def input_text_to_json_script_with_retry(complete_prompt_path, api_key):
     return json_response
 
 # Step 1: input_text to json
-def input_text_to_json_script(input_text, output_path, api_key):
+def input_text_to_json_script(input_text, output_path, api_key, model_name):
     input_text = maybe_get_content_from_file(input_text)
     text_to_audio_script_prompt = get_file_content('prompts/text_to_json.prompt')
     prompt = f'{text_to_audio_script_prompt}\n\nInput text: {input_text}\n\nScript:\n'
     complete_prompt_path = output_path / 'complete_input_text_to_audio_script.prompt'
     write_to_file(complete_prompt_path, prompt)
-    audio_script_response = input_text_to_json_script_with_retry(complete_prompt_path, api_key)
+    audio_script_response = input_text_to_json_script_with_retry(complete_prompt_path, api_key, model_name)
     generated_audio_script_filename = output_path / 'audio_script.json'
     write_to_file(generated_audio_script_filename, audio_script_response)
     return audio_script_response
 
 # Step 2: json to char-voice map
-def json_script_to_char_voice_map(json_script, voices, output_path, api_key):
+def json_script_to_char_voice_map(json_script, voices, output_path, api_key, model_name):
     json_script_content = maybe_get_content_from_file(json_script)
     prompt = get_file_content('prompts/audio_script_to_character_voice_map.prompt')
     presets_str = '\n'.join(f"{preset['id']}: {preset['desc']}" for preset in voices.values())
     prompt = Template(prompt).substitute(voice_and_desc=presets_str)
     prompt = f"{prompt}\n\nAudio script:\n'''\n{json_script_content}\n'''\n\noutput:\n"
     write_to_file(output_path / 'complete_audio_script_to_char_voice_map.prompt', prompt)
-    char_voice_map_response = try_extract_content_from_quotes(chat_with_gpt(prompt, api_key))
+    char_voice_map_response = try_extract_content_from_quotes(chat(prompt, api_key, model_name))
     char_voice_map = json5.loads(char_voice_map_response)
     # enrich char_voice_map with voice preset metadata
     complete_char_voice_map = {c: voices[char_voice_map[c]] for c in char_voice_map}
@@ -186,14 +211,14 @@ def audio_code_gen_to_result(audio_gen_code_path):
     os.system(f'PYTHONPATH=. python {audio_gen_code_filename}')
 
 # Function call used by Gradio: input_text to json
-def generate_json_file(session_id, input_text, api_key):
+def generate_json_file(session_id, input_text, api_key, model_name):
     output_path = utils.get_session_path(session_id)
     # Step 1
     print(f'session_id={session_id}, Step 1: Writing audio script with LLM ...')
-    return input_text_to_json_script(input_text, output_path, api_key)
+    return input_text_to_json_script(input_text, output_path, api_key, model_name)
 
 # Function call used by Gradio: json to result wav
-def generate_audio(session_id, json_script, api_key):
+def generate_audio(session_id, json_script, api_key, model_name):
     def count_lines(content):
         # Split the string using the newline character and count the non-empty lines
         return sum(1 for line in content.split('\n') if line.strip())
@@ -208,7 +233,7 @@ def generate_audio(session_id, json_script, api_key):
 
     # Step 2
     print(f'session_id={session_id}, Step 2: Parsing character voice with LLM...')
-    char_voice_map = json_script_to_char_voice_map(json_script, voices, output_path, api_key)
+    char_voice_map = json_script_to_char_voice_map(json_script, voices, output_path, api_key, model_name)
     # Step 3
     json_script_filename = output_path / 'audio_script.json'
     char_voice_map_filename = output_path / 'character_voice_map.json'
@@ -224,6 +249,6 @@ def generate_audio(session_id, json_script, api_key):
     return result_wav_filename, char_voice_map
 
 # Convenient function call used by wavjourney_cli
-def full_steps(session_id, input_text, api_key):
-    json_script = generate_json_file(session_id, input_text, api_key)
-    return generate_audio(session_id, json_script, api_key)
+def full_steps(session_id, input_text, api_key, model_name):
+    json_script = generate_json_file(session_id, input_text, api_key, model_name)
+    return generate_audio(session_id, json_script, api_key, model_name)
