@@ -7,56 +7,20 @@ build:
 
   # a list of ubuntu apt packages to install
   system_packages:
-    - git
-    - git-lfs
-    - wget
-    - curl
-    - build-essential
-    - libssl-dev
-    - zlib1g-dev
-    - libbz2-dev
-    - libreadline-dev
-    - libsqlite3-dev
-    - libncursesw5-dev
-    - xz-utils
-    - tk-dev
-    - libxml2-dev
-    - libxmlsec1-dev
-    - libffi-dev
-    - liblzma-dev
     - ffmpeg
-    - libsndfile-dev
 
   # python version in the form '3.11' or '3.11.4'
-  python_version: "3.11"
+  python_version: "3.8.17"
 
+  python_requirements: requirements.txt
+
+  # commands run after the environment is setup
+  # This additional install is required to fix dependencies:
+  #   fairseq 0.12.2 depends on hydra-core<1.1 and >=1.0.7
+  #   audiocraft 0.0.2a2 depends on hydra-core>=1.1
   run:
-    # Install conda. Not ideal to use conda in docker, but solves deps properly.
-    - "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && rm -f Miniconda3-latest-Linux-x86_64.sh"
-    - "echo 'export HOME=/home/user PATH=/opt/miniconda3/bin:/home/user/.local/bin:$PATH CONDA_PREFIX=/opt/miniconda3/envs' >> ~/.bashrc"
-    - "mkdir /deps"
+    - "python -m pip install --force-reinstall --no-deps fairseq==0.12.2"
 
-    # Install package deps. 
-    - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/WavJourney.yml && mv WavJourney.yml /deps"
-    - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/Bark.yml && mv Bark.yml /deps"
-    - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/Envs/AudioCraft.yml && mv AudioCraft.yml /deps"
-    - "opt/miniconda3/bin/conda env create -f deps/WavJourney.yml"
-    - "opt/miniconda3/bin/conda env update -f deps/Bark.yml"
-    - "opt/miniconda3/bin/conda env update -f deps/AudioCraft.yml"
-    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U git+https://git@github.com/facebookresearch/audiocraft@c5157b5bf14bf83449c17ea1eeb66c19fb4bc7f0#egg=audiocraft"
-    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U --no-deps voicefixer==0.1.2"
-    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U --no-deps numpy==1.21"
-    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U --no-deps librosa==0.8.1"
-
-    # Download model weights
-    - "mkdir -p /src/cog_setup"
-    - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/2465a260861af9a43342ce4a4f4344b5cf402482/cog_setup/download_tta_ttm_sr_vp.py && mv download_tta_ttm_sr_vp.py /src/cog_setup"
-    - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/config.yaml"
-    - "mv config.yaml /src"
-    - "cd /src && /opt/miniconda3/bin/conda run --live-stream -n WavJourney python cog_setup/download_tta_ttm_sr_vp.py"
-
-    # Install the replicate package in conda so Llama2 can be used
-    - "opt/miniconda3/bin/conda run --live-stream -n WavJourney pip install -U replicate"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"

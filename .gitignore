@@ -5,3 +5,4 @@ VoiceParser
 __pycache__
 .cog
 output.mp3
+logs
