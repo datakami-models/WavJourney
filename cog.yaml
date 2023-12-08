@@ -30,9 +30,6 @@ build:
   # python version in the form '3.11' or '3.11.4'
   python_version: "3.11"
 
-  python_packages:
-    - pydub
-
   run:
     # Install conda. Not ideal to use conda in docker, but solves deps properly.
     - "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 && rm -f Miniconda3-latest-Linux-x86_64.sh"
@@ -57,21 +54,6 @@ build:
     - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/config.yaml"
     - "mv config.yaml /src"
     - "cd /src && /opt/miniconda3/bin/conda run --live-stream -n WavJourney python cog_setup/download_tta_ttm_sr_vp.py"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'import nltk; import nltk.download(\"punkt\")\'"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'from transformers import BarkModel; BarkModel.from_pretrained("suno/bark")\'"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'from audiocraft.models import AudioGen; tta_model = AudioGen.get_pretrained("facebook/audiogen-medium")\'"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'from audiocraft.models import MusicGen; tta_model = MusicGen.get_pretrained("facebook/musicgen-small")\'"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'from voicefixer import VoiceFixer; vf = VoiceFixer()\'"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney python -c \'from VoiceParser.model import VoiceParser; vp = VoiceParser(device="cpu")\'"
-
-    # Set up WavJourney variables so that services can run later.
-    # - "echo 'export WAVJOURNEY_SERVICE_PORT=8021' >> ~/.bashrc"
-    # - "echo 'export WAVJOURNEY_SERVICE_URL=127.0.0.1' >> ~/.bashrc"
-    # - "echo 'export WAVJOURNEY_MAX_SCRIPT_LINES=999' >> ~/.bashrc"
-    
-    # Run services
-    # - "wget https://raw.githubusercontent.com/datakami-models/WavJourney/373576734db56279084f90c5dc59c7a3e6071b0b/scripts/start_services.sh && mv start_services.sh /deps"
-    # - "opt/miniconda3/bin/conda run --live-stream -n WavJourney bash /deps/start_services.sh"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"

@@ -9,7 +9,6 @@ import random
 import datetime
 import shutil
 import subprocess
-from pydub import AudioSegment
 from cog_setup.load_cog_env_vars import load_env_variables
 
 
@@ -25,15 +24,6 @@ def convert_wav_to_mp3(wav_file_path, mp3_file_path):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred during conversion: {e}")
         return False
-
-
-def load_mp3_file_handle(file_path):
-    try:
-        audio = AudioSegment.from_mp3(file_path)
-        return audio
-    except Exception as e:
-        print(f"An error occurred while loading the MP3 file: {e}")
-        return None
 
 
 def uid8():
@@ -66,6 +56,3 @@ class Predictor(BasePredictor):
         convert_wav_to_mp3(result_file_path, output_file_path)
         
         return Path(output_file_path)
-        # processed_input = preprocess(image)
-        # output = self.model(processed_image, scale)
-        # return postprocess(output)
