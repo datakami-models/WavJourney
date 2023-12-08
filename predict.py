@@ -20,6 +20,7 @@ WAVJOURNEY_SERVICE_PORT = '8021'
 WAVJOURNEY_SERVICE_URL = '127.0.0.1'
 WAVJOURNEY_MAX_SCRIPT_LINES = '999'
 
+
 def convert_wav_to_mp3(wav_file_path, mp3_file_path):
     if not shutil.which("ffmpeg"):
         raise FileNotFoundError("Could not find ffmpeg")
@@ -69,11 +70,8 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        prompt: str = Input(
-            description="Your prompt",
-            default="Generate a one-minute introduction to quantum mechanics",
-        ),
-        model: str = Input(description="Model to generate the audio script. GPT4 is standard, Llama2 is possible but has low success rate (10 percent according to paper).", default="gpt", choices=["gpt", "llama2"]),
+        prompt: str = Input(description="Prompt that describes the entire audio segment", default="A wizard giving an interview to the WizardTimes saying he lost his favorite hat"),
+        model: str = Input(description="Choose the model to generate the audio script. GPT4 is standard, Llama2 is possible but has low success rate (10 percent according to paper).", default="gpt", choices=["gpt", "llama2"]),
         gpt_api_key: str = Input(description="OpenAI API key when using the gpt model for audio script generation.", default=""),
         replicate_api_key: str = Input(description="Replicate API key when using the llama2 70B model for audio script generation.", default=""),
     ) -> Path:
@@ -84,12 +82,11 @@ class Predictor(BasePredictor):
         if model == "llama2":
             os.environ["REPLICATE_API_TOKEN"] = replicate_api_key
             api_key = replicate_api_key
-            raise Error("LLAMA to be implemented")
         else:
             os.environ["WAVJOURNEY_OPENAI_KEY"] = gpt_api_key
             api_key = gpt_api_key
 
-        pipeline.full_steps(session_id, prompt, api_key)
+        pipeline.full_steps(session_id, prompt, api_key, model)
 
         result_file_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "sessions", session_id, "audio", f"res_{session_id}.wav")
         if not os.path.isfile(result_file_path):

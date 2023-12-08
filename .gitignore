@@ -1,0 +1,8 @@
+venv
+output
+services_logs
+VoiceParser
+__pycache__
+.cog
+output.mp3
+logs
