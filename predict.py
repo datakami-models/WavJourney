@@ -51,7 +51,7 @@ class Predictor(BasePredictor):
     def predict(
         self,
         prompt: str = Input(description="Prompt that describes the entire audio segment", default="A wizard giving an interview to the WizardTimes saying he lost his favorite hat")
-    ) -> File:
+    ) -> Path:
         """Run a single prediction on the model"""
         session_id = f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}_{uid8()}'
         os.system(f'/opt/miniconda3/bin/conda run --live-stream -n WavJourney python wavjourney_cli.py -f --input-text "{prompt}" --session-id "{session_id}"')
@@ -65,8 +65,7 @@ class Predictor(BasePredictor):
         output_file_path=os.path.join(result_dir_path, "res_" + session_id + ".mp3")
         convert_wav_to_mp3(result_file_path, output_file_path)
         
-        output_mp3_file = File(load_mp3_file_handle(output_file_path))
-        return output_mp3_file
+        return Path(output_file_path)
         # processed_input = preprocess(image)
         # output = self.model(processed_image, scale)
         # return postprocess(output)
