@@ -1,0 +1,25 @@
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - ffmpeg
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.8.17"
+
+  python_requirements: requirements.txt
+
+  # commands run after the environment is setup
+  # This additional install is required to fix dependencies:
+  #   fairseq 0.12.2 depends on hydra-core<1.1 and >=1.0.7
+  #   audiocraft 0.0.2a2 depends on hydra-core>=1.1
+  run:
+    - "python -m pip install --force-reinstall --no-deps fairseq==0.12.2"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
