@@ -3,3 +3,4 @@ output
 services_logs
 VoiceParser
 __pycache__
+.cog
